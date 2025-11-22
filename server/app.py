@@ -21,7 +21,7 @@ class Plants(Resource):
 
     def get(self):
         plants = [plant.to_dict() for plant in Plant.query.all()]
-        return make_response(jsonify(plants), 200)
+        return make_response(plants, 200)
 
     def post(self):
         data = request.get_json()
@@ -44,8 +44,31 @@ api.add_resource(Plants, '/plants')
 class PlantByID(Resource):
 
     def get(self, id):
-        plant = Plant.query.filter_by(id=id).first().to_dict()
-        return make_response(jsonify(plant), 200)
+        plant = Plant.query.filter_by(id=id).first()
+        if plant:
+            return make_response(plant.to_dict(), 200)
+        return make_response({'error': 'Plant not found'}, 404)
+
+    def patch(self, id):
+        plant = Plant.query.filter_by(id=id).first()
+        if plant:
+            data = request.get_json()
+            
+            # Update the plant attributes
+            for attr in data:
+                setattr(plant, attr, data[attr])
+            
+            db.session.commit()
+            return make_response(plant.to_dict(), 200)
+        return make_response({'error': 'Plant not found'}, 404)
+
+    def delete(self, id):
+        plant = Plant.query.filter_by(id=id).first()
+        if plant:
+            db.session.delete(plant)
+            db.session.commit()
+            return make_response('', 204)
+        return make_response({'error': 'Plant not found'}, 404)
 
 
 api.add_resource(PlantByID, '/plants/<int:id>')
